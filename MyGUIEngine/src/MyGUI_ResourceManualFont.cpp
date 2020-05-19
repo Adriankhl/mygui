@@ -39,6 +39,7 @@ namespace MyGUI
 			if (mTexture == nullptr)
 			{
 				mTexture = render.createTexture(mSource);
+				mTexture->setShader("asdf");
 				if (mTexture != nullptr)
 					mTexture->loadFromFile(mSource);
 			}

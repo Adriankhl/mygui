@@ -30,7 +30,8 @@ namespace MyGUI
 		mLock(false),
 		mBuffer(nullptr),
 		mImageLoader(_loader),
-		mRenderTarget(nullptr)
+		mRenderTarget(nullptr),
+		mProgramID(0)
 	{
 	}
 
@@ -354,6 +355,11 @@ namespace MyGUI
 		}
 	}
 
+	void OpenGL3Texture::setShader(const std::string& _shaderName)
+	{
+		mProgramID = 1;
+	}
+
 	IRenderTarget* OpenGL3Texture::getRenderTarget()
 	{
 		if (mRenderTarget == nullptr)
@@ -365,6 +371,11 @@ namespace MyGUI
 	unsigned int OpenGL3Texture::getTextureID() const
 	{
 		return mTextureID;
+	}
+
+	unsigned int OpenGL3Texture::getShaderID() const
+	{
+		return mProgramID;
 	}
 
 	int OpenGL3Texture::getWidth()

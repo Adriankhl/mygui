@@ -68,9 +68,9 @@ namespace MyGUI
 	/*internal:*/
 		void drawOneFrame();
 		bool isPixelBufferObjectSupported() const;
-		unsigned int createShaderProgram(void);
 
 	private:
+		unsigned int createShaderProgram(bool test);
 		void destroyAllResources();
 
 	private:
@@ -78,7 +78,8 @@ namespace MyGUI
 		bool mUpdate;
 		VertexColourType mVertexFormat;
 		RenderTargetInfo mInfo;
-		unsigned int mProgramID;
+		unsigned int mProgramID; // TODO: rename to mDefaultProgramID
+		unsigned int mProgramIdSdfTest;
 		unsigned int mReferenceCount; // for nested rendering
 		int mYScaleUniformLocation;
 

@@ -60,7 +60,7 @@ namespace MyGUI
 		return id;
 	}
 
-	GLuint OpenGL3RenderManager::createShaderProgram(void)
+	GLuint OpenGL3RenderManager::createShaderProgram(bool test)
 	{
 		const char vertexShader[] = R"(
 			#version 130
@@ -80,7 +80,7 @@ namespace MyGUI
 			}
 			)";
 
-		const char fragmentShader[] = R"(
+		const char fragmentShader1[] = R"(
 			#version 130
 			in vec4 Color;
 			in vec2 TexCoord;
@@ -91,9 +91,37 @@ namespace MyGUI
 				FragColor = texture2D(Texture, TexCoord) * Color;
 			}
 			)";
+		const char fragmentShader2[] = R"(
+			#version 130
+			in vec4 Color;
+			in vec2 TexCoord;
+			out vec4 FragColor;
+			uniform sampler2D Texture;
+
+			const float smoothing = 1.0/16.0;
+
+			void main(void)
+			{
+//				FragColor = texture2D(Texture, TexCoord) * Color;
+
+//				float distance = texture2D(Texture, TexCoord).a;
+//				float alpha = smoothstep(0.5 - smoothing, 0.5 + smoothing, distance);
+//				FragColor = vec4(Color.rgb, Color.a * alpha);
+
+				float pxRange = 2.0;
+
+				vec2 msdfUnit = pxRange/vec2(textureSize(Texture, 0));
+				vec3 sample = texture2D(Texture, TexCoord).rgb;
+				float sigDist = texture2D(Texture, TexCoord).a - 0.3;//median(sample.r, sample.g, sample.b) - 0.5;
+				sigDist *= dot(msdfUnit, 0.5/fwidth(TexCoord));
+				float opacity = clamp(sigDist + 0.5, 0.0, 1.0);
+				//color = mix(bgColor, fgColor, opacity);
+				FragColor = vec4(Color.rgb, Color.a * opacity);
+			}
+			)";
 
 		GLuint vsID = buildShader(vertexShader, GL_VERTEX_SHADER);
-		GLuint fsID = buildShader(fragmentShader, GL_FRAGMENT_SHADER);
+		GLuint fsID = buildShader(test ? fragmentShader2 : fragmentShader1, GL_FRAGMENT_SHADER);
 
 		GLuint progID = glCreateProgram();
 		glAttachShader(progID, vsID);
@@ -165,7 +193,8 @@ namespace MyGUI
 
 		mPboIsSupported = glewIsExtensionSupported("GL_EXT_pixel_buffer_object") != 0;
 
-		mProgramID = createShaderProgram();
+		mProgramID = createShaderProgram(false);
+		mProgramIdSdfTest = createShaderProgram(true);
 
 		MYGUI_PLATFORM_LOG(Info, getClassTypeName() << " successfully initialized");
 		mIsInitialise = true;
@@ -211,6 +240,10 @@ namespace MyGUI
 			OpenGL3Texture* texture = static_cast<OpenGL3Texture*>(_texture);
 			texture_id = texture->getTextureID();
 			//MYGUI_PLATFORM_ASSERT(texture_id, "Texture is not created");
+			if (texture->getShaderID())
+			{
+				glUseProgram(mProgramIdSdfTest/*texture->getShaderID()*/);
+			}
 		}
 
 		glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -220,6 +253,10 @@ namespace MyGUI
 		glBindVertexArray(0);
 
 		glBindTexture(GL_TEXTURE_2D, 0);
+		if (_texture && static_cast<OpenGL3Texture*>(_texture)->getShaderID())
+		{
+			glUseProgram(mProgramID);
+		}
 	}
 
 	void OpenGL3RenderManager::begin()
